@@ -10,8 +10,8 @@
     "mongodb": "^1.4.30",
     "mongoskin": "^1.4.13",
     "nodestalker": "^0.1.18",
-    "request": "^2.51.0",
-  },
-  "devDependencies": {}
+    "request": "^2.51.0"
+  }
+
 }
 
