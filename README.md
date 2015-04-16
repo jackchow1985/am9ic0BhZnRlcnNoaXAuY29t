@@ -4,5 +4,7 @@ Aftership challenge Level 2.
 Nodejs version v0.10.33
 
 How to run
+
 sudo npm install
+
 node exchange.js
