@@ -1,0 +1,17 @@
+{
+  "name": "aftership",
+  "version": "1.0.0",
+  "description": "challenge level 2",
+  "main": "exchange.js",
+  "author": "Jack",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^0.19.0",
+    "mongodb": "^1.4.30",
+    "mongoskin": "^1.4.13",
+    "nodestalker": "^0.1.18",
+    "request": "^2.51.0",
+  },
+  "devDependencies": {}
+}
+
