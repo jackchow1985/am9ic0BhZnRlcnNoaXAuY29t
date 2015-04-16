@@ -3,14 +3,17 @@ var bs = require('nodestalker'),
     cheerio = require('cheerio'),
     mongo = require('mongoskin'),
     request = require('request');
+
 var beanstalkd_url = "challenge.aftership.net:11300";
 var error_retry_times = 0;
 var success_times = 0; 
 var mongodb = mongo.db("mongodb://jack:asdfasdf@ds061681.mongolab.com:61681/exchange?auto_reconnect=true"); //mongodb url
 var collection = mongodb.collection("rate"); //mongodb collection name
+var tube_name = "jackchow1985"
 
 //Generate task in the working q, do not invoke in the worker process.
 // function createTask() {
+// 	var client = bs.Client('challenge.aftership.net:11300');
 // 	client.use('jackchow1985').onSuccess(function(data) {
 // 	    console.log(data);
 
@@ -32,27 +35,32 @@ function notifyWorker() {
 	        getExchangeRate(JSON.parse(job.data), function(errCode, msg) {
 	        	client.disconnect();
 	        	if(!errCode && success_times < 10) { // task normal, wait for 1 min
-	        		success_times ++;
-	        		
+	        		success_times ++;	        		
 		        	setTimeout(function() {
-		        		console.info("Task success")
-		        		notifyWorker();
-		        	}, 1000*5) // wait 1 min
+		        		//reput the job to q
+		        		client.put(job.data).onSuccess(function(data) {
+				 		    client.disconnect();
+				 		    notifyWorker();
+				 		});		        		
+		        	}, 1000*60) // wait 1 min
 		        } else if(errCode && error_retry_times < 3) { //retry, task error
 					retry_times ++;
 					setTimeout(function() {
-		        		notifyWorker();
+						//reput the job to q
+		        		client.put(job.data).onSuccess(function(data) {
+				 		    client.disconnect();
+				 		    notifyWorker();
+				 		});
 		        	}, 1000*3) // wait 3s
 		        } else {
 		        	// Do nothing, stop.
 		        	process.exit(0); //exit with success
 		        }
 	        });
-	        // client.deleteJob(job.id).onSuccess(function(del_msg) {
-	        //     console.log('deleted', job);
-	        //     console.log('message', del_msg);
-	        //     resJob();
-	        // });
+	        //delete the processed job
+	        client.deleteJob(job.id).onSuccess(function(del_msg) {
+	            console.log('deleted', job);
+	        });
 	    });
 	});
 }
@@ -63,9 +71,9 @@ function _convertRate(rate) {
 		if(_isNumber(rate)) {
 			return parseFloat(rate).toFixed(2);
 		}
+	} else {	
+		return rate
 	}
-	
-	return rate
 }
 
 function _isNumber(n) {
@@ -90,8 +98,7 @@ function getExchangeRate(taskObj, callback) {
 				//save to mongodb
 				collection.save(saveObj, function(err, savedObj) {
 		            if(err) {
-		                console.error(err);
-		                
+		                console.error(err);		                
 		            } else {
 		            	hasNew = true;
 		            	//log the saved object to verify
